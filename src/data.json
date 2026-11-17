@@ -1,25 +1,26 @@
 {
   "timing": {
-    "hookSeconds": 13,
-    "demoSeconds": 21,
-    "outroSeconds": 8
+    "hookSeconds": 12,
+    "demoSeconds": 36,
+    "outroSeconds": 12
   },
   "hook": {
-    "title": "Siswa Sering Salah Posisi Teks di LCD Arduino?",
+    "badge": "SUASANA KELAS NYATA",
+    "title": "Materi Teori Bikin Siswa Cepat Bosan?",
     "problems": [
-      "Cuma nyalin kode setCursor tanpa paham koordinat",
-      "Latihan soal titik koordinat di kelas cepat bikin bosan"
+      "Penjelasan abstrak sering bikin siswa bingung & pasif",
+      "Interactive Panel pemerintah sayang kalau cuma buat slide biasa"
     ]
   },
   "demo": {
-    "url": "estafetlcd.netlify.app",
-    "solutionLabel": "GAMIFIKASI ESTAFET",
+    "url": "Interactive Panel • Gamifikasi Kelas",
+    "solutionLabel": "AI + ESTAFET KELOMPOK",
     "solutionTitle": "LCD Pixel Hunter",
-    "solutionDescription": "Berburu koordinat kolom & baris secara estafet kelompok."
+    "solutionDescription": "Siswa maju bergantian ke layar panel berburu tantangan sebelum waktu habis."
   },
   "outro": {
     "heading": "DISKUSI RUANG GURU",
-    "question": "Gimana cara Bapak/Ibu melatih konsep rumit biar gak membosankan?",
+    "question": "Materi apa yang paling sulit dipahami siswa di kelas Bapak/Ibu?",
     "cta": "Tulis di kolom komentar ya"
   }
 }

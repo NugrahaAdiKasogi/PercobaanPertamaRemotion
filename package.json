@@ -9,7 +9,9 @@
   },
   "private": true,
   "dependencies": {
+    "@remotion/captions": "^4.0.544",
     "@remotion/cli": "4.0.544",
+    "@remotion/install-whisper-cpp": "^4.0.544",
     "@remotion/tailwind-v4": "^4.0.544",
     "@tailwindcss/postcss": "^4.3.5",
     "react": "19.3.1",
