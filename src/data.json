@@ -1,0 +1,25 @@
+{
+  "timing": {
+    "hookSeconds": 13,
+    "demoSeconds": 21,
+    "outroSeconds": 8
+  },
+  "hook": {
+    "title": "Siswa Sering Salah Posisi Teks di LCD Arduino?",
+    "problems": [
+      "Cuma nyalin kode setCursor tanpa paham koordinat",
+      "Latihan soal titik koordinat di kelas cepat bikin bosan"
+    ]
+  },
+  "demo": {
+    "url": "estafetlcd.netlify.app",
+    "solutionLabel": "GAMIFIKASI ESTAFET",
+    "solutionTitle": "LCD Pixel Hunter",
+    "solutionDescription": "Berburu koordinat kolom & baris secara estafet kelompok."
+  },
+  "outro": {
+    "heading": "DISKUSI RUANG GURU",
+    "question": "Gimana cara Bapak/Ibu melatih konsep rumit biar gak membosankan?",
+    "cta": "Tulis di kolom komentar ya"
+  }
+}
