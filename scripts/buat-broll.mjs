@@ -1,57 +1,76 @@
-import fs from 'fs';
-import path from 'path';
-import { execFileSync } from 'child_process';
-import ffmpegPath from 'ffmpeg-static';
+import fs from "node:fs";
+import path from "node:path";
+import { execFileSync } from "node:child_process";
 
-if (!fs.existsSync('public')) fs.mkdirSync('public');
-if (!fs.existsSync('src/captions.json')) {
-  fs.writeFileSync('src/captions.json', '[]');
+const argDir = process.argv[2] || "public/episodes/template";
+const episodeDir = path.resolve(
+  argDir.startsWith("public") ? argDir : path.join("public", argDir),
+);
+
+if (!fs.existsSync(episodeDir)) {
+  console.error(`Folder episode tidak ditemukan: ${episodeDir}`);
+  process.exit(1);
 }
 
-// 1. Gabung video di folder "clips" TANPA blur -> public/broll.mp4
+// Cari klip sumber di <episodeDir>/raw, atau fallback ke folder raw-broll/ di root
+const localRawDir = path.join(episodeDir, "raw");
+const globalRawDir = path.resolve("raw-broll");
+const sourceDir = fs.existsSync(localRawDir) ? localRawDir : globalRawDir;
+
+if (!fs.existsSync(sourceDir)) {
+  console.error(
+    `Folder klip mentah tidak ditemukan. Buat folder ${localRawDir} dan taruh klip MP4 di dalamnya.`,
+  );
+  process.exit(1);
+}
+
 const clips = fs
-  .readdirSync('clips')
-  .filter((f) => /\.(mp4|mov|mkv)$/i.test(f))
+  .readdirSync(sourceDir)
+  .filter((f) => /\.(mp4|mov|mkv|webm)$/i.test(f))
   .sort()
-  .map((f) => path.join('clips', f));
+  .map((f) => path.join(sourceDir, f));
 
-if (clips.length > 0) {
-  const inputs = clips.flatMap((file) => ['-i', file]);
-  const filters = clips.map(
-    (_, i) =>
-      `[${i}:v]fps=30,scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,format=yuv420p[v${i}]`
-  );
-  const concatInputs = clips.map((_, i) => `[v${i}]`).join('');
-  const filterComplex = `${filters.join(';')};${concatInputs}concat=n=${clips.length}:v=1:a=0[outv]`;
-
-  execFileSync(
-    ffmpegPath,
-    [
-      ...inputs,
-      '-filter_complex',
-      filterComplex,
-      '-map',
-      '[outv]',
-      '-c:v',
-      'libx264',
-      '-crf',
-      '22',
-      '-an',
-      '-y',
-      'public/broll.mp4',
-    ],
-    { stdio: 'inherit' }
-  );
-  console.log('Berhasil membuat public/broll.mp4 (tajam)');
+if (clips.length === 0) {
+  console.error(`Tidak ada file video ditemukan di ${sourceDir}`);
+  process.exit(1);
 }
 
-// 2. Ubah .mp3 ElevenLabs baru -> public/vo.wav (16kHz mono siap Whisper)
-const mp3File = fs.readdirSync('.').find((f) => /\.mp3$/i.test(f));
-if (mp3File) {
+const outputBroll = path.join(episodeDir, "broll.mp4");
+const listFile = path.join(episodeDir, ".concat-list.txt");
+
+// Buat daftar concat FFmpeg
+const listContent = clips
+  .map((c) => `file '${c.replace(/\\/g, "/").replace(/'/g, "'\\''")}'`)
+  .join("\n");
+fs.writeFileSync(listFile, listContent, "utf-8");
+
+console.log(`Merakit ${clips.length} klip menjadi ${outputBroll}...`);
+
+try {
   execFileSync(
-    ffmpegPath,
-    ['-i', mp3File, '-ar', '16000', '-ac', '1', '-y', 'public/vo.wav'],
-    { stdio: 'inherit' }
+    "ffmpeg",
+    [
+      "-y",
+      "-f",
+      "concat",
+      "-safe",
+      "0",
+      "-i",
+      listFile,
+      "-vf",
+      "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=30",
+      "-an",
+      "-c:v",
+      "libx264",
+      "-pix_fmt",
+      "yuv420p",
+      "-crf",
+      "22",
+      outputBroll,
+    ],
+    { stdio: "inherit" },
   );
-  console.log('Berhasil membuat public/vo.wav');
+  console.log(`Selesai! Tersimpan di: ${outputBroll}`);
+} finally {
+  if (fs.existsSync(listFile)) fs.unlinkSync(listFile);
 }

@@ -21,62 +21,62 @@ export const RemotionRoot: React.FC = () => {
       schema={EpisodeSchema}
       defaultProps={defaultData as EpisodeProps}
       calculateMetadata={async ({ props }) => {
-        const voUrl = staticFile(
-          `${props.episodeDir}/${props.assets.voiceover}`,
-        );
-        const brollUrl = staticFile(
-          `${props.episodeDir}/${props.assets.broll}`,
-        );
-        const demoUrl = staticFile(`${props.episodeDir}/${props.assets.demo}`);
-        const captionsUrl = staticFile(
-          `${props.episodeDir}/${props.assets.captions}`,
-        );
+        const cleanDir = props.episodeDir
+          .replace(/^public\//, "")
+          .replace(/\/$/, "");
 
         let audioDurationSec = 20;
         if (props.assets.voiceover) {
           try {
-            const voUrl = staticFile(
-              `${props.episodeDir}/${props.assets.voiceover}`,
-            );
-            audioDurationSec = await getAudioDurationInSeconds(voUrl);
+            const url = staticFile(`${cleanDir}/${props.assets.voiceover}`);
+            audioDurationSec = await getAudioDurationInSeconds(url);
           } catch (e) {
-            console.warn("Gagal membaca durasi audio:", e);
+            console.warn(
+              "Gagal membaca durasi audio, memakai fallback 20s:",
+              e,
+            );
           }
         }
 
         let brollDurationSec = 10;
         if (props.assets.broll) {
           try {
-            const brollUrl = staticFile(
-              `${props.episodeDir}/${props.assets.broll}`,
-            );
-            const brollMeta = await getVideoMetadata(brollUrl);
-            brollDurationSec = brollMeta.durationInSeconds;
+            const url = staticFile(`${cleanDir}/${props.assets.broll}`);
+            const meta = await getVideoMetadata(url);
+            brollDurationSec = meta.durationInSeconds;
           } catch (e) {
-            console.warn("Gagal membaca durasi broll.mp4:", e);
+            console.warn(
+              "Gagal membaca durasi broll.mp4, memakai fallback 10s:",
+              e,
+            );
           }
         }
 
         let demoDurationSec = 20;
         if (props.assets.demo) {
           try {
-            const demoUrl = staticFile(
-              `${props.episodeDir}/${props.assets.demo}`,
-            );
-            const demoMeta = await getVideoMetadata(demoUrl);
-            demoDurationSec = demoMeta.durationInSeconds;
+            const url = staticFile(`${cleanDir}/${props.assets.demo}`);
+            const meta = await getVideoMetadata(url);
+            demoDurationSec = meta.durationInSeconds;
           } catch (e) {
-            console.warn("Gagal membaca durasi demo.mp4:", e);
+            console.warn(
+              "Gagal membaca durasi demo.mp4, memakai fallback 20s:",
+              e,
+            );
           }
         }
+
         let captions = [];
-        try {
-          const res = await fetch(captionsUrl);
-          if (res.ok) {
-            captions = await res.json();
+        if (props.assets.captions) {
+          try {
+            const url = staticFile(`${cleanDir}/${props.assets.captions}`);
+            const res = await fetch(url);
+            if (res.ok) {
+              captions = await res.json();
+            }
+          } catch {
+            captions = [];
           }
-        } catch {
-          captions = [];
         }
 
         const totalDurationSec = audioDurationSec + 0.5;
@@ -85,6 +85,7 @@ export const RemotionRoot: React.FC = () => {
           durationInFrames: Math.max(30, Math.ceil(totalDurationSec * FPS)),
           props: {
             ...props,
+            episodeDir: cleanDir,
             resolvedCaptions: captions,
             brollDurationInFrames: Math.max(
               1,

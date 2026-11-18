@@ -31,8 +31,17 @@ export const EpisodeSchema = z.object({
     panelHeader: z.string(),
     hookBadge: z.string(),
     hookTitle: z.string(),
+    painPoints: z.array(z.string()).optional().default([]),
+    solutionTitle: z.string().optional().default('Solusi Interaktif'),
+    solutionPoints: z.array(z.string()).optional().default([]),
     closingQuestion: z.string(),
   }),
+  options: z
+    .object({
+      showProgressBar: z.boolean().optional().default(true),
+    })
+    .optional()
+    .default({ showProgressBar: true }),
   // Diisi otomatis oleh calculateMetadata
   resolvedCaptions: z.array(CaptionItemSchema).optional().default([]),
   brollDurationInFrames: z.number().optional().default(300),

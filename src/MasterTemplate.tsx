@@ -1,16 +1,22 @@
-import React from 'react';
+import React, { useMemo } from "react";
 import {
   AbsoluteFill,
   Audio,
   Sequence,
   useCurrentFrame,
   useVideoConfig,
-} from 'remotion';
-import { EpisodeProps } from './schema';
-import { HookScene } from './scenes/HookScene';
-import { DemoScene } from './scenes/DemoScene';
-import { ClosingScene } from './scenes/ClosingScene';
-import { getMediaSrc } from './media';
+} from "remotion";
+import { EpisodeProps } from "./schema";
+import { HookScene } from "./scenes/HookScene";
+import { DemoScene } from "./scenes/DemoScene";
+import { ClosingScene } from "./scenes/ClosingScene";
+import { getMediaSrc } from "./media";
+
+interface NormalizedWord {
+  text: string;
+  startSec: number;
+  endSec: number;
+}
 
 export const MasterTemplate: React.FC<EpisodeProps> = (props) => {
   const frame = useCurrentFrame();
@@ -19,43 +25,65 @@ export const MasterTemplate: React.FC<EpisodeProps> = (props) => {
 
   const voUrl = props.assets.voiceover
     ? getMediaSrc(`${props.episodeDir}/${props.assets.voiceover}`)
-    : '';
-  const bgmUrl = props.assets.bgm ? getMediaSrc(props.assets.bgm) : '';
-  const sfxPopUrl = props.assets.sfxPop ? getMediaSrc(props.assets.sfxPop) : '';
+    : "";
+  const bgmUrl = props.assets.bgm ? getMediaSrc(props.assets.bgm) : "";
+  const sfxPopUrl = props.assets.sfxPop ? getMediaSrc(props.assets.sfxPop) : "";
 
   const demoStartFrame = Math.min(
     durationInFrames - 2,
-    Math.max(1, Math.round(props.cues.demoStartSec * fps))
+    Math.max(1, Math.round(props.cues.demoStartSec * fps)),
   );
   const questionStartFrame = Math.min(
     durationInFrames - 1,
-    Math.max(demoStartFrame + 1, Math.round(props.cues.questionStartSec * fps))
+    Math.max(demoStartFrame + 1, Math.round(props.cues.questionStartSec * fps)),
   );
 
   const hookDuration = demoStartFrame;
   const demoDuration = questionStartFrame - demoStartFrame;
   const closingDuration = durationInFrames - questionStartFrame;
 
-  const activeCaption = props.resolvedCaptions.find((item) => {
-    const startSec =
-      typeof item.start === 'number'
-        ? item.start
-        : typeof item.startMs === 'number'
-          ? item.startMs / 1000
-          : -1;
-    const endSec =
-      typeof item.end === 'number'
-        ? item.end
-        : typeof item.endMs === 'number'
-          ? item.endMs / 1000
-          : -1;
-    return currentSec >= startSec && currentSec <= endSec;
+  // Kelompokkan captions menjadi chunk 4 kata dengan penanda kata aktif
+  const captionChunks = useMemo(() => {
+    const words: NormalizedWord[] = (props.resolvedCaptions || [])
+      .map((item) => ({
+        text: (item.word ?? item.text ?? "").trim(),
+        startSec:
+          typeof item.start === "number"
+            ? item.start
+            : typeof item.startMs === "number"
+              ? item.startMs / 1000
+              : 0,
+        endSec:
+          typeof item.end === "number"
+            ? item.end
+            : typeof item.endMs === "number"
+              ? item.endMs / 1000
+              : 0,
+      }))
+      .filter((w) => w.text.length > 0);
+
+    const chunks: NormalizedWord[][] = [];
+    for (let i = 0; i < words.length; i += 4) {
+      chunks.push(words.slice(i, i + 4));
+    }
+    return chunks;
+  }, [props.resolvedCaptions]);
+
+  const activeChunk = captionChunks.find((chunk) => {
+    const first = chunk[0];
+    const last = chunk[chunk.length - 1];
+    return currentSec >= first.startSec && currentSec <= last.endSec + 0.12;
   });
 
-  const captionText = activeCaption?.text ?? activeCaption?.word ?? '';
+  const progressPercent = Math.min(
+    100,
+    Math.max(0, (frame / Math.max(1, durationInFrames - 1)) * 100),
+  );
 
   return (
-    <AbsoluteFill style={{ backgroundColor: '#090D16', fontFamily: 'sans-serif' }}>
+    <AbsoluteFill
+      style={{ backgroundColor: "#090D16", fontFamily: "sans-serif" }}
+    >
       {voUrl ? <Audio src={voUrl} /> : null}
       {bgmUrl ? <Audio src={bgmUrl} loop volume={0.1} /> : null}
 
@@ -82,33 +110,77 @@ export const MasterTemplate: React.FC<EpisodeProps> = (props) => {
         <ClosingScene props={props} />
       </Sequence>
 
-      {captionText ? (
+      {/* Progress Bar Atas (di dalam area aman atas TikTok) */}
+      {props.options?.showProgressBar !== false ? (
         <div
           style={{
-            position: 'absolute',
-            bottom: 510,
+            position: "absolute",
+            top: 256,
             left: 64,
-            right: 120,
-            display: 'flex',
-            justifyContent: 'center',
-            pointerEvents: 'none',
+            right: 130,
+            height: 8,
+            borderRadius: 999,
+            backgroundColor: "rgba(255, 255, 255, 0.16)",
+            overflow: "hidden",
           }}
         >
           <div
             style={{
-              backgroundColor: 'rgba(9, 13, 22, 0.88)',
+              width: `${progressPercent}%`,
+              height: "100%",
+              backgroundColor: props.theme.accentColor,
+              borderRadius: 999,
+            }}
+          />
+        </div>
+      ) : null}
+
+      {/* Layer Caption dengan Active-Word Highlight (Safe Zone: right 130px, bottom 510px) */}
+      {activeChunk ? (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 510,
+            left: 64,
+            right: 130,
+            display: "flex",
+            justifyContent: "center",
+            pointerEvents: "none",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "rgba(9, 13, 22, 0.9)",
               border: `2px solid ${props.theme.accentColor}`,
-              color: '#FFFFFF',
-              padding: '16px 28px',
+              padding: "16px 26px",
               borderRadius: 20,
               fontSize: 40,
               fontWeight: 800,
-              textAlign: 'center',
-              lineHeight: 1.25,
-              boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
+              textAlign: "center",
+              lineHeight: 1.28,
+              boxShadow: "0 10px 30px rgba(0,0,0,0.65)",
+              display: "flex",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              gap: "0 10px",
             }}
           >
-            {captionText}
+            {activeChunk.map((w, idx) => {
+              const isCurrentWord =
+                currentSec >= w.startSec && currentSec <= w.endSec + 0.05;
+              return (
+                <span
+                  key={idx}
+                  style={{
+                    color: isCurrentWord ? props.theme.accentColor : "#FFFFFF",
+                    transform: isCurrentWord ? "scale(1.06)" : "scale(1)",
+                    display: "inline-block",
+                  }}
+                >
+                  {w.text}
+                </span>
+              );
+            })}
           </div>
         </div>
       ) : null}

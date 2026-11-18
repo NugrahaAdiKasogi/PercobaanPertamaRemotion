@@ -1,0 +1,37 @@
+{
+  "episodeDir": "episodes/template",
+  "theme": {
+    "accentColor": "#38BDF8"
+  },
+  "assets": {
+    "voiceover": "",
+    "broll": "",
+    "demo": "",
+    "captions": "captions.json",
+    "bgm": "",
+    "sfxPop": ""
+  },
+  "cues": {
+    "demoStartSec": 12,
+    "questionStartSec": 45
+  },
+  "text": {
+    "topBadge": "DOKUMENTASI KELAS",
+    "panelHeader": "INTERACTIVE DEMO",
+    "hookBadge": "RUANG SINTAKS",
+    "hookTitle": "Judul Hook Episode Baru",
+    "painPoints": [
+      "Siswa cepat bosan jika hanya dijelaskan teori",
+      "Sulit membayangkan alur kerja secara langsung"
+    ],
+    "solutionTitle": "Pendekatan Interaktif di Kelas",
+    "solutionPoints": [
+      "Simulasi visual langsung lewat browser",
+      "Latihan bertahap dengan umpan balik otomatis"
+    ],
+    "closingQuestion": "Pertanyaan penutup untuk diskusi di komentar?"
+  },
+  "options": {
+    "showProgressBar": true
+  }
+}

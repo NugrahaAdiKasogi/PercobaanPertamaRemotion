@@ -8,4 +8,4 @@ whisper.cpp
 out
 out/
 public/episodes/*
-!public/episodes/_template/
+!public/episodes/template/
